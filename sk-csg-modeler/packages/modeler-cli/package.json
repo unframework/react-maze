@@ -1,0 +1,49 @@
+{
+  "name": "modeler-cli",
+  "version": "1.3.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "Szymon Kaliski <hi@szymonkaliski.com> (http://szymonkaliski.com)",
+  "license": "MIT",
+  "preferGlobal": true,
+  "scripts": {
+    "dev:compile:frontend": "watchify ./frontend.js -o bundle/frontend.js -x react -x react-dom -t [ babelify --presets [ @babel/react ] ]",
+    "dev:compile:vendor": "watchify -o bundle/vendor.js -r react -r react-dom",
+    "dev:compile": "concurrently 'npm run dev:compile:frontend' 'npm run dev:compile:vendor'",
+    "prod:compile:frontend": "browserify ./frontend.js -o bundle/frontend.js -x react -x react-dom -t [ babelify --presets [ @babel/react ] ]",
+    "prod:compile:vendor": "browserify -o bundle/vendor.js -r react -r react-dom",
+    "prod:compile": "concurrently 'npm run prod:compile:frontend' 'npm run prod:compile:vendor'",
+    "prepublish": "npm run prod:compile"
+  },
+  "bin": {
+    "modeler": "index.js"
+  },
+  "dependencies": {
+    "@babel/core": "^7.4.0",
+    "@babel/preset-react": "^7.0.0",
+    "@jscad/csg": "^0.7.0",
+    "@jscad/io": "^0.5.0",
+    "@swc/core": "^1.0.39",
+    "babelify": "^10.0.0",
+    "browserify": "^16.2.3",
+    "chokidar": "^2.1.5",
+    "get-port": "^4.2.0",
+    "load-script2": "^1.0.1",
+    "modeler-csg": "^1.2.0",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-three-fiber": "^1.5.3",
+    "socket.io": "^2.2.0",
+    "socket.io-client": "^2.2.0",
+    "three": "^0.103.0",
+    "three-orbitcontrols": "^2.102.1",
+    "use-socketio": "^1.0.0",
+    "watchify-middleware": "^1.8.1",
+    "yargs": "^13.2.2"
+  },
+  "devDependencies": {
+    "concurrently": "^4.1.0"
+  },
+  "gitHead": "d5f74080b0a509c6664071f21381a5d9186056cd"
+}
