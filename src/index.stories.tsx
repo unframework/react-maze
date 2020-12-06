@@ -7,7 +7,7 @@ import { Line } from '@react-three/drei/Line';
 import * as THREE from 'three';
 import { CSG } from '@jscad/csg';
 
-import { CSGMesh } from './CSGMesh';
+import { CSGGeometry } from './CSGMesh';
 
 export default {
   title: 'Basic scene',
@@ -66,51 +66,45 @@ const TileMesh: React.FC<{
 
   return (
     <>
-      <mesh position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]} castShadow>
-        <planeBufferGeometry
-          args={[GRID_CELL_SIZE * 0.5, GRID_CELL_SIZE * 0.5]}
-        />
-        <meshLambertMaterial color="#f88" shadowSide={THREE.FrontSide} />
-
-        <CSGMesh
-          castShadow
-          receiveShadow
-          csg={() =>
-            CSG.cube({
-              center: [0, 0, 0.25],
-              radius: [GRID_CELL_SIZE * 0.25, GRID_CELL_SIZE * 0.25, 0.25]
-            }).union(
+      <group position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]}>
+        <mesh castShadow receiveShadow>
+          <CSGGeometry
+            csg={() =>
               CSG.cube({
-                center: [
-                  nx * 0.375 * GRID_CELL_SIZE,
-                  ny * 0.375 * GRID_CELL_SIZE,
-                  0.25
-                ],
-                radius: [
-                  GRID_CELL_SIZE * (0.25 - Math.abs(nx) * 0.125),
-                  GRID_CELL_SIZE * (0.25 - Math.abs(ny) * 0.125),
-                  0.25
-                ]
+                center: [0, 0, 0.25],
+                radius: [GRID_CELL_SIZE * 0.25, GRID_CELL_SIZE * 0.25, 0.25]
               }).union(
                 CSG.cube({
                   center: [
-                    px * 0.375 * GRID_CELL_SIZE,
-                    py * 0.375 * GRID_CELL_SIZE,
+                    nx * 0.375 * GRID_CELL_SIZE,
+                    ny * 0.375 * GRID_CELL_SIZE,
                     0.25
                   ],
                   radius: [
-                    GRID_CELL_SIZE * (0.25 - Math.abs(px) * 0.125),
-                    GRID_CELL_SIZE * (0.25 - Math.abs(py) * 0.125),
+                    GRID_CELL_SIZE * (0.25 - Math.abs(nx) * 0.125),
+                    GRID_CELL_SIZE * (0.25 - Math.abs(ny) * 0.125),
                     0.25
                   ]
-                }).setColor([1, 0, 0])
+                }).union(
+                  CSG.cube({
+                    center: [
+                      px * 0.375 * GRID_CELL_SIZE,
+                      py * 0.375 * GRID_CELL_SIZE,
+                      0.25
+                    ],
+                    radius: [
+                      GRID_CELL_SIZE * (0.25 - Math.abs(px) * 0.125),
+                      GRID_CELL_SIZE * (0.25 - Math.abs(py) * 0.125),
+                      0.25
+                    ]
+                  }).setColor([1, 0, 0])
+                )
               )
-            )
-          }
-        >
+            }
+          />
           <meshLambertMaterial vertexColors />
-        </CSGMesh>
-      </mesh>
+        </mesh>
+      </group>
     </>
   );
 };

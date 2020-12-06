@@ -4,9 +4,7 @@ import { CSG, Vector as CSGVector } from '@jscad/csg';
 
 // polygon conversion is copy-pasted from https://github.com/szymonkaliski/modeler/blob/master/packages/modeler-csg/src/utils.js
 
-export const CSGMesh: React.FC<
-  { csg: () => CSG } & Omit<React.ComponentPropsWithoutRef<'mesh'>, 'geometry'>
-> = ({ csg, ...meshProps }) => {
+export const CSGGeometry: React.FC<{ csg: () => CSG }> = ({ csg }) => {
   const [geometry] = useState(() => {
     // construct the CSG and get polygons
     const polygons = csg().toPolygons();
@@ -59,5 +57,5 @@ export const CSGMesh: React.FC<
     return geometry;
   });
 
-  return <mesh geometry={geometry} {...meshProps} />;
+  return <primitive attach="geometry" object={geometry} />;
 };
