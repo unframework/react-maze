@@ -70,6 +70,7 @@ const TileMesh: React.FC<{
         <mesh castShadow receiveShadow>
           <CSGGeometry>
             <cube
+              color={[1, 0, 0]}
               center={[0, 0, 0.25]}
               radius={[GRID_CELL_SIZE * 0.25, GRID_CELL_SIZE * 0.25, 0.25]}
             />
