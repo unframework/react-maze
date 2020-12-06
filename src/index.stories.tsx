@@ -4,11 +4,15 @@ import { Canvas } from 'react-three-fiber';
 import * as THREE from 'three';
 
 export default {
-  title: 'Basic scene'
+  title: 'Basic scene',
+  parameters: {
+    layout: 'fullscreen'
+  }
 } as Meta;
 
 export const Main: Story = () => (
   <Canvas
+    style={{ height: '100vh' }}
     camera={{ position: [-6, -4, 2], up: [0, 0, 1] }}
     shadowMap
     onCreated={({ gl }) => {
