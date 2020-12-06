@@ -5,7 +5,7 @@ import { CSG, Vector as CSGVector } from '@jscad/csg';
 
 // polygon conversion is copy-pasted from https://github.com/szymonkaliski/modeler/blob/master/packages/modeler-csg/src/utils.js
 const {
-  createElement,
+  createRootElement,
   CSGRenderer
 } = require('../sk-csg-modeler/packages/modeler-csg/src/reconciler');
 
@@ -15,12 +15,16 @@ export const CSGGeometry: React.FC = ({ children }) => {
 
   // generate the model
   const model = useMemo(() => {
-    const rootElement = createElement('ROOT');
+    // content accumulator object as fiber container root
+    const rootObject = createRootElement();
 
-    const ROOT = CSGRenderer.createContainer(rootElement);
-    CSGRenderer.updateContainer(childrenRef.current, ROOT, null);
+    // create and populate fiber tree
+    const fiberContainer = CSGRenderer.createContainer(rootObject);
+    CSGRenderer.updateContainer(childrenRef.current, fiberContainer, null);
 
-    return CSGRenderer.getPublicRootInstance(ROOT);
+    // read directly from root object
+    // (using getPublicRootInstance on root fiber node does not return entire content)
+    return rootObject.content;
   }, []);
 
   // convert CSG model polygons to Three
