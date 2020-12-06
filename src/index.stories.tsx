@@ -5,6 +5,9 @@ import { Canvas } from 'react-three-fiber';
 import { MapControls } from '@react-three/drei/MapControls';
 import { Line } from '@react-three/drei/Line';
 import * as THREE from 'three';
+import { CSG } from '@jscad/csg';
+
+import { CSGMesh } from './CSGMesh';
 
 export default {
   title: 'Basic scene',
@@ -68,6 +71,12 @@ const TileMesh: React.FC<{
           args={[GRID_CELL_SIZE * 0.5, GRID_CELL_SIZE * 0.5]}
         />
         <meshLambertMaterial color="#f88" shadowSide={THREE.FrontSide} />
+
+        <CSGMesh
+          csg={() => CSG.cube({ center: [0, 0, 0.5], radius: [0.2, 0.2, 0.1] })}
+        >
+          <meshLambertMaterial color="#ff0" />
+        </CSGMesh>
       </mesh>
 
       <mesh
