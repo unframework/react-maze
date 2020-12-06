@@ -62,29 +62,48 @@ const TileMesh: React.FC<{
   const [nx, ny] = CARDINAL_DIR_LIST[exit];
 
   return (
-    <mesh position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]} castShadow>
-      <planeBufferGeometry
-        args={[GRID_CELL_SIZE * 0.8, GRID_CELL_SIZE * 0.8]}
-      />
-      <meshLambertMaterial color="#f88" shadowSide={THREE.FrontSide} />
+    <>
+      <mesh position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]} castShadow>
+        <planeBufferGeometry
+          args={[GRID_CELL_SIZE * 0.5, GRID_CELL_SIZE * 0.5]}
+        />
+        <meshLambertMaterial color="#f88" shadowSide={THREE.FrontSide} />
+      </mesh>
 
-      <Line
-        points={[
-          [px * 0.4 * GRID_CELL_SIZE, py * 0.4 * GRID_CELL_SIZE, -0.1],
-          [px * 0.5 * GRID_CELL_SIZE, py * 0.5 * GRID_CELL_SIZE, -0.1]
+      <mesh
+        position={[
+          (x + px * 0.375) * GRID_CELL_SIZE,
+          (y + py * 0.375) * GRID_CELL_SIZE,
+          0
         ]}
-        color="#00f"
-        lineWidth={2}
-      />
-      <Line
-        points={[
-          [nx * 0.4 * GRID_CELL_SIZE, ny * 0.4 * GRID_CELL_SIZE, -0.1],
-          [nx * 0.5 * GRID_CELL_SIZE, ny * 0.5 * GRID_CELL_SIZE, -0.1]
+        castShadow
+      >
+        <planeBufferGeometry
+          args={[
+            GRID_CELL_SIZE * (0.5 - Math.abs(px) * 0.25),
+            GRID_CELL_SIZE * (0.5 - Math.abs(py) * 0.25)
+          ]}
+        />
+        <meshLambertMaterial color="#f48" shadowSide={THREE.FrontSide} />
+      </mesh>
+
+      <mesh
+        position={[
+          (x + nx * 0.375) * GRID_CELL_SIZE,
+          (y + ny * 0.375) * GRID_CELL_SIZE,
+          0
         ]}
-        color="#f0f"
-        lineWidth={2}
-      />
-    </mesh>
+        castShadow
+      >
+        <planeBufferGeometry
+          args={[
+            GRID_CELL_SIZE * (0.5 - Math.abs(nx) * 0.25),
+            GRID_CELL_SIZE * (0.5 - Math.abs(ny) * 0.25)
+          ]}
+        />
+        <meshLambertMaterial color="#f84" shadowSide={THREE.FrontSide} />
+      </mesh>
+    </>
   );
 };
 
