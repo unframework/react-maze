@@ -18,6 +18,9 @@ declare module '@jscad/csg' {
   export declare class CSG {
     toPolygons(): Polygon[];
 
+    union(...args: CSG[]): CSG;
+    subtract(...args: CSG[]): CSG;
+
     static cube(options: { center?: number[]; radius?: number[] }): CSG;
   }
 }

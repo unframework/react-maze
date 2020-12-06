@@ -73,44 +73,43 @@ const TileMesh: React.FC<{
         <meshLambertMaterial color="#f88" shadowSide={THREE.FrontSide} />
 
         <CSGMesh
-          csg={() => CSG.cube({ center: [0, 0, 0.5], radius: [0.2, 0.2, 0.1] })}
+          castShadow
+          receiveShadow
+          csg={() =>
+            CSG.cube({
+              center: [0, 0, 0.25],
+              radius: [GRID_CELL_SIZE * 0.25, GRID_CELL_SIZE * 0.25, 0.25]
+            }).union(
+              CSG.cube({
+                center: [
+                  nx * 0.375 * GRID_CELL_SIZE,
+                  ny * 0.375 * GRID_CELL_SIZE,
+                  0.25
+                ],
+                radius: [
+                  GRID_CELL_SIZE * (0.25 - Math.abs(nx) * 0.125),
+                  GRID_CELL_SIZE * (0.25 - Math.abs(ny) * 0.125),
+                  0.25
+                ]
+              }).union(
+                CSG.cube({
+                  center: [
+                    px * 0.375 * GRID_CELL_SIZE,
+                    py * 0.375 * GRID_CELL_SIZE,
+                    0.25
+                  ],
+                  radius: [
+                    GRID_CELL_SIZE * (0.25 - Math.abs(px) * 0.125),
+                    GRID_CELL_SIZE * (0.25 - Math.abs(py) * 0.125),
+                    0.25
+                  ]
+                })
+              )
+            )
+          }
         >
           <meshLambertMaterial color="#ff0" />
         </CSGMesh>
-      </mesh>
-
-      <mesh
-        position={[
-          (x + px * 0.375) * GRID_CELL_SIZE,
-          (y + py * 0.375) * GRID_CELL_SIZE,
-          0
-        ]}
-        castShadow
-      >
-        <planeBufferGeometry
-          args={[
-            GRID_CELL_SIZE * (0.5 - Math.abs(px) * 0.25),
-            GRID_CELL_SIZE * (0.5 - Math.abs(py) * 0.25)
-          ]}
-        />
-        <meshLambertMaterial color="#f48" shadowSide={THREE.FrontSide} />
-      </mesh>
-
-      <mesh
-        position={[
-          (x + nx * 0.375) * GRID_CELL_SIZE,
-          (y + ny * 0.375) * GRID_CELL_SIZE,
-          0
-        ]}
-        castShadow
-      >
-        <planeBufferGeometry
-          args={[
-            GRID_CELL_SIZE * (0.5 - Math.abs(nx) * 0.25),
-            GRID_CELL_SIZE * (0.5 - Math.abs(ny) * 0.25)
-          ]}
-        />
-        <meshLambertMaterial color="#f84" shadowSide={THREE.FrontSide} />
       </mesh>
     </>
   );
