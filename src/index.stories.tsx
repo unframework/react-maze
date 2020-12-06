@@ -24,6 +24,70 @@ const CARDINAL_DIR_LIST = [
   [0, -1]
 ];
 
+const TileMeshPreview: React.FC<{
+  x: number;
+  y: number;
+  entry: number;
+}> = ({ entry, x, y }) => {
+  const [px, py] = CARDINAL_DIR_LIST[entry];
+
+  return (
+    <>
+      <mesh position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]} castShadow>
+        <planeBufferGeometry
+          args={[GRID_CELL_SIZE * 0.8, GRID_CELL_SIZE * 0.8]}
+        />
+        <meshLambertMaterial color="#f00" shadowSide={THREE.FrontSide} />
+
+        <Line
+          points={[
+            [px * 0.4 * GRID_CELL_SIZE, py * 0.4 * GRID_CELL_SIZE, -0.1],
+            [px * 0.5 * GRID_CELL_SIZE, py * 0.5 * GRID_CELL_SIZE, -0.1]
+          ]}
+          color="#00f"
+          lineWidth={2}
+        />
+      </mesh>
+    </>
+  );
+};
+
+const TileMesh: React.FC<{
+  x: number;
+  y: number;
+  entry: number;
+  exit: number;
+}> = ({ entry, exit, x, y }) => {
+  const [px, py] = CARDINAL_DIR_LIST[entry];
+  const [nx, ny] = CARDINAL_DIR_LIST[exit];
+
+  return (
+    <mesh position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]} castShadow>
+      <planeBufferGeometry
+        args={[GRID_CELL_SIZE * 0.8, GRID_CELL_SIZE * 0.8]}
+      />
+      <meshLambertMaterial color="#f88" shadowSide={THREE.FrontSide} />
+
+      <Line
+        points={[
+          [px * 0.4 * GRID_CELL_SIZE, py * 0.4 * GRID_CELL_SIZE, -0.1],
+          [px * 0.5 * GRID_CELL_SIZE, py * 0.5 * GRID_CELL_SIZE, -0.1]
+        ]}
+        color="#00f"
+        lineWidth={2}
+      />
+      <Line
+        points={[
+          [nx * 0.4 * GRID_CELL_SIZE, ny * 0.4 * GRID_CELL_SIZE, -0.1],
+          [nx * 0.5 * GRID_CELL_SIZE, ny * 0.5 * GRID_CELL_SIZE, -0.1]
+        ]}
+        color="#f0f"
+        lineWidth={2}
+      />
+    </mesh>
+  );
+};
+
 const ProposedTileOffshoot: React.FC<{
   grid: number[];
   x: number;
@@ -129,52 +193,12 @@ const ProposedTile: React.FC<{
     return null;
   }
 
-  const [px, py] = CARDINAL_DIR_LIST[entry];
-  const [nx, ny] = exit === null ? [] : CARDINAL_DIR_LIST[exit];
-
   return (
     <>
-      <mesh position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]} castShadow>
-        <planeBufferGeometry
-          args={[GRID_CELL_SIZE * 0.8, GRID_CELL_SIZE * 0.8]}
-        />
-        <meshLambertMaterial color="#f00" shadowSide={THREE.FrontSide} />
-      </mesh>
-
-      <Line
-        points={[
-          [
-            (x + px * 0.4) * GRID_CELL_SIZE,
-            (y + py * 0.4) * GRID_CELL_SIZE,
-            -0.1
-          ],
-          [
-            (x + px * 0.5) * GRID_CELL_SIZE,
-            (y + py * 0.5) * GRID_CELL_SIZE,
-            -0.1
-          ]
-        ]}
-        color="#00f"
-        lineWidth={2}
-      />
-
-      {exit !== null && (
-        <Line
-          points={[
-            [
-              (x + nx * 0.4) * GRID_CELL_SIZE,
-              (y + ny * 0.4) * GRID_CELL_SIZE,
-              -0.1
-            ],
-            [
-              (x + nx * 0.5) * GRID_CELL_SIZE,
-              (y + ny * 0.5) * GRID_CELL_SIZE,
-              -0.1
-            ]
-          ]}
-          color="#f0f"
-          lineWidth={2}
-        />
+      {exit === null ? (
+        <TileMeshPreview x={x} y={y} entry={entry} />
+      ) : (
+        <TileMesh x={x} y={y} entry={entry} exit={exit} />
       )}
 
       {updatedGrid && (
