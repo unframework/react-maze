@@ -9,6 +9,7 @@
     "@types/react-dom": "^16.9.0",
     "potpack": "^1.0.1",
     "react": "^17.0.0",
+    "react-async-hook": "^3.6.2",
     "react-dom": "^17.0.0",
     "react-render-prop": "^0.0.1",
     "react-three-fiber": "^5.3.1",
