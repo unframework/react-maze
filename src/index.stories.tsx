@@ -27,13 +27,17 @@ const ProposedTileOffshoot: React.FC<{
   grid: number[];
   x: number;
   y: number;
-}> = ({ grid, x, y }) => {
+  onPlaced: (exit: number) => void;
+}> = ({ grid, x, y, onPlaced }) => {
+  const onPlacedRef = useRef(onPlaced);
+  onPlacedRef.current = onPlaced;
+
   const [attempts, setAttempts] = useState(() =>
     CARDINAL_DIR_LIST.map((_, index) => index).sort(() => Math.random() - 0.5)
   );
 
   const { result: isReady } = useAsync(() => {
-    return new Promise((resolve) => setTimeout(resolve, 500)).then(() => true);
+    return new Promise((resolve) => setTimeout(resolve, 200)).then(() => true);
   }, [attempts]);
 
   if (attempts.length === 0) {
@@ -50,6 +54,9 @@ const ProposedTileOffshoot: React.FC<{
       entry={nextEntry}
       x={x + dx}
       y={y + dy}
+      onPlaced={() => {
+        onPlacedRef.current(exit);
+      }}
       onRejected={() => {
         // try next config
         setAttempts((prev) => prev.slice(1));
@@ -72,10 +79,15 @@ const ProposedTile: React.FC<{
   entry: number;
   x: number;
   y: number;
+  onPlaced?: () => void;
   onRejected?: () => void;
-}> = ({ grid, entry, x, y, onRejected }) => {
+}> = ({ grid, entry, x, y, onPlaced, onRejected }) => {
+  const onPlacedRef = useRef(onPlaced);
+  onPlacedRef.current = onPlaced;
   const onRejectedRef = useRef(onRejected);
   onRejectedRef.current = onRejected;
+
+  const [exit, setExit] = useState(null as number | null);
 
   const updatedGrid = useMemo(() => {
     if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
@@ -98,6 +110,10 @@ const ProposedTile: React.FC<{
     if (!updatedGrid && onRejectedRef.current) {
       onRejectedRef.current();
     }
+
+    if (updatedGrid && onPlacedRef.current) {
+      onPlacedRef.current();
+    }
   }, [updatedGrid]);
 
   if (!updatedGrid) {
@@ -105,6 +121,7 @@ const ProposedTile: React.FC<{
   }
 
   const [px, py] = CARDINAL_DIR_LIST[entry];
+  const [nx, ny] = exit === null ? [] : CARDINAL_DIR_LIST[exit];
 
   return (
     <>
@@ -116,13 +133,31 @@ const ProposedTile: React.FC<{
       <Line
         points={[
           [x + px * 0.4, y + py * 0.4, -0.1],
-          [x + px * 0.6, y + py * 0.6, -0.1]
+          [x + px * 0.5, y + py * 0.5, -0.1]
         ]}
         color="#00f"
         lineWidth={2}
       />
 
-      {updatedGrid && <ProposedTileOffshoot grid={updatedGrid} x={x} y={y} />}
+      {exit !== null && (
+        <Line
+          points={[
+            [x + nx * 0.4, y + ny * 0.4, -0.1],
+            [x + nx * 0.5, y + ny * 0.5, -0.1]
+          ]}
+          color="#f0f"
+          lineWidth={2}
+        />
+      )}
+
+      {updatedGrid && (
+        <ProposedTileOffshoot
+          grid={updatedGrid}
+          x={x}
+          y={y}
+          onPlaced={setExit}
+        />
+      )}
     </>
   );
 };
