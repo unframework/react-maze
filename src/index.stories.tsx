@@ -29,7 +29,7 @@ const ProposedTileOffshoot: React.FC<{
   y: number;
 }> = ({ grid, x, y }) => {
   const [attempts, setAttempts] = useState(() =>
-    [...CARDINAL_DIR_LIST].sort(() => Math.random() - 0.5)
+    CARDINAL_DIR_LIST.map((_, index) => index).sort(() => Math.random() - 0.5)
   );
 
   const { result: isReady } = useAsync(() => {
@@ -40,11 +40,14 @@ const ProposedTileOffshoot: React.FC<{
     return null;
   }
 
-  const [dx, dy] = attempts[0];
+  const exit = attempts[0];
+  const nextEntry = (exit + 2) % CARDINAL_DIR_LIST.length; // diametral opposite
+  const [dx, dy] = CARDINAL_DIR_LIST[exit];
 
   return isReady ? (
     <ProposedTile
       grid={grid}
+      entry={nextEntry}
       x={x + dx}
       y={y + dy}
       onRejected={() => {
@@ -66,10 +69,11 @@ const ProposedTileOffshoot: React.FC<{
 
 const ProposedTile: React.FC<{
   grid?: number[];
+  entry: number;
   x: number;
   y: number;
   onRejected?: () => void;
-}> = ({ grid, x, y, onRejected }) => {
+}> = ({ grid, entry, x, y, onRejected }) => {
   const onRejectedRef = useRef(onRejected);
   onRejectedRef.current = onRejected;
 
@@ -100,12 +104,23 @@ const ProposedTile: React.FC<{
     return null;
   }
 
+  const [px, py] = CARDINAL_DIR_LIST[entry];
+
   return (
     <>
       <mesh position={[x, y, 0]} castShadow>
         <planeBufferGeometry args={[0.8, 0.8]} />
         <meshLambertMaterial color="#f00" shadowSide={THREE.FrontSide} />
       </mesh>
+
+      <Line
+        points={[
+          [x + px * 0.4, y + py * 0.4, -0.1],
+          [x + px * 0.6, y + py * 0.6, -0.1]
+        ]}
+        color="#00f"
+        lineWidth={2}
+      />
 
       {updatedGrid && <ProposedTileOffshoot grid={updatedGrid} x={x} y={y} />}
     </>
@@ -133,7 +148,7 @@ export const Main: Story = () => (
       </mesh>
 
       <group position={[-0.5 * (GRID_WIDTH - 1), -0.5 * (GRID_HEIGHT - 1), 0]}>
-        <ProposedTile x={0} y={0} />
+        <ProposedTile entry={3} x={0} y={0} />
       </group>
 
       <directionalLight intensity={1} position={[-1, 1, 4]} castShadow />
