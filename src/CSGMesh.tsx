@@ -1,15 +1,32 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import * as THREE from 'three';
+
 import { CSG, Vector as CSGVector } from '@jscad/csg';
 
 // polygon conversion is copy-pasted from https://github.com/szymonkaliski/modeler/blob/master/packages/modeler-csg/src/utils.js
+const {
+  createElement,
+  CSGRenderer
+} = require('../sk-csg-modeler/packages/modeler-csg/src/reconciler');
 
-export const CSGGeometry: React.FC<{ csg: () => CSG }> = ({ csg }) => {
-  const [geometry] = useState(() => {
-    // construct the CSG and get polygons
-    const polygons = csg().toPolygons();
+export const CSGGeometry: React.FC = ({ children }) => {
+  // read once
+  const childrenRef = useRef(children);
 
-    // convert to Three
+  // generate the model
+  const model = useMemo(() => {
+    const rootElement = createElement('ROOT');
+
+    const ROOT = CSGRenderer.createContainer(rootElement);
+    CSGRenderer.updateContainer(childrenRef.current, ROOT, null);
+
+    return CSGRenderer.getPublicRootInstance(ROOT);
+  }, []);
+
+  // convert CSG model polygons to Three
+  const geometry = useMemo(() => {
+    const polygons = model.toPolygons();
+
     const geometry = new THREE.Geometry();
 
     // @todo de-duplicate
@@ -55,7 +72,7 @@ export const CSGGeometry: React.FC<{ csg: () => CSG }> = ({ csg }) => {
     geometry.computeBoundingBox();
 
     return geometry;
-  });
+  }, [model]);
 
   return <primitive attach="geometry" object={geometry} />;
 };

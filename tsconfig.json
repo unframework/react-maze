@@ -15,5 +15,5 @@
     "noEmit": true,
     "jsx": "react"
   },
-  "include": ["src"]
+  "include": ["src", "sk-csg-modeler/packages/modeler-csg/src"]
 }
