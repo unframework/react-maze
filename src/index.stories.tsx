@@ -103,12 +103,12 @@ const TileMesh: React.FC<{
                     GRID_CELL_SIZE * (0.25 - Math.abs(py) * 0.125),
                     0.25
                   ]
-                })
+                }).setColor([1, 0, 0])
               )
             )
           }
         >
-          <meshLambertMaterial color="#ff0" />
+          <meshLambertMaterial vertexColors />
         </CSGMesh>
       </mesh>
     </>

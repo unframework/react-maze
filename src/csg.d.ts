@@ -13,6 +13,10 @@ declare module '@jscad/csg' {
     plane: {
       normal: Vector;
     };
+
+    shared: {
+      color: number[] | null;
+    };
   }
 
   export declare class CSG {
@@ -20,6 +24,7 @@ declare module '@jscad/csg' {
 
     union(...args: CSG[]): CSG;
     subtract(...args: CSG[]): CSG;
+    setColor(color: number[]): CSG;
 
     static cube(options: { center?: number[]; radius?: number[] }): CSG;
   }
