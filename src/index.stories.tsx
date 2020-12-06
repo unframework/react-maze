@@ -15,6 +15,7 @@ export default {
 
 const GRID_WIDTH = 4;
 const GRID_HEIGHT = 4;
+const GRID_CELL_SIZE = 2;
 
 const CARDINAL_DIR_LIST = [
   [1, 0],
@@ -65,8 +66,16 @@ const ProposedTileOffshoot: React.FC<{
   ) : (
     <Line
       points={[
-        [x + dx * 0.5, y + dy * 0.5, 0.1],
-        [x + dx * 0.75, y + dy * 0.75, 0.1]
+        [
+          (x + dx * 0.5) * GRID_CELL_SIZE,
+          (y + dy * 0.5) * GRID_CELL_SIZE,
+          -0.1
+        ],
+        [
+          (x + dx * 0.75) * GRID_CELL_SIZE,
+          (y + dy * 0.75) * GRID_CELL_SIZE,
+          -0.1
+        ]
       ]}
       color="#0f0"
       lineWidth={2}
@@ -125,15 +134,25 @@ const ProposedTile: React.FC<{
 
   return (
     <>
-      <mesh position={[x, y, 0]} castShadow>
-        <planeBufferGeometry args={[0.8, 0.8]} />
+      <mesh position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]} castShadow>
+        <planeBufferGeometry
+          args={[GRID_CELL_SIZE * 0.8, GRID_CELL_SIZE * 0.8]}
+        />
         <meshLambertMaterial color="#f00" shadowSide={THREE.FrontSide} />
       </mesh>
 
       <Line
         points={[
-          [x + px * 0.4, y + py * 0.4, -0.1],
-          [x + px * 0.5, y + py * 0.5, -0.1]
+          [
+            (x + px * 0.4) * GRID_CELL_SIZE,
+            (y + py * 0.4) * GRID_CELL_SIZE,
+            -0.1
+          ],
+          [
+            (x + px * 0.5) * GRID_CELL_SIZE,
+            (y + py * 0.5) * GRID_CELL_SIZE,
+            -0.1
+          ]
         ]}
         color="#00f"
         lineWidth={2}
@@ -142,8 +161,16 @@ const ProposedTile: React.FC<{
       {exit !== null && (
         <Line
           points={[
-            [x + nx * 0.4, y + ny * 0.4, -0.1],
-            [x + nx * 0.5, y + ny * 0.5, -0.1]
+            [
+              (x + nx * 0.4) * GRID_CELL_SIZE,
+              (y + ny * 0.4) * GRID_CELL_SIZE,
+              -0.1
+            ],
+            [
+              (x + nx * 0.5) * GRID_CELL_SIZE,
+              (y + ny * 0.5) * GRID_CELL_SIZE,
+              -0.1
+            ]
           ]}
           color="#f0f"
           lineWidth={2}
@@ -182,7 +209,13 @@ export const Main: Story = () => (
         <meshLambertMaterial color="#808080" />
       </mesh>
 
-      <group position={[-0.5 * (GRID_WIDTH - 1), -0.5 * (GRID_HEIGHT - 1), 0]}>
+      <group
+        position={[
+          -0.5 * (GRID_WIDTH - 1) * GRID_CELL_SIZE,
+          -0.5 * (GRID_HEIGHT - 1) * GRID_CELL_SIZE,
+          0
+        ]}
+      >
         <ProposedTile entry={3} x={0} y={0} />
       </group>
 
