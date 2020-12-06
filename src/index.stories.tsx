@@ -1,6 +1,7 @@
 import React from 'react';
 import { Story, Meta } from '@storybook/react';
 import { Canvas } from 'react-three-fiber';
+import { MapControls } from '@react-three/drei/MapControls';
 import * as THREE from 'three';
 
 export default {
@@ -13,7 +14,7 @@ export default {
 export const Main: Story = () => (
   <Canvas
     style={{ height: '100vh' }}
-    camera={{ position: [-6, -4, 2], up: [0, 0, 1] }}
+    camera={{ position: [0, -1, 5], up: [0, 0, 1] }}
     shadowMap
     onCreated={({ gl }) => {
       gl.toneMapping = THREE.ACESFilmicToneMapping;
@@ -22,30 +23,12 @@ export const Main: Story = () => (
       gl.outputEncoding = THREE.sRGBEncoding;
     }}
   >
+    <MapControls />
+
     <scene>
       <mesh position={[0, 0, -3]} receiveShadow>
-        <planeBufferGeometry attach="geometry" args={[20, 20]} />
+        <planeBufferGeometry attach="geometry" args={[10, 10]} />
         <meshLambertMaterial attach="material" color="#808080" />
-      </mesh>
-
-      <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-        <boxBufferGeometry attach="geometry" args={[2, 2, 5]} />
-        <meshLambertMaterial attach="material" color="#c0c0c0" />
-      </mesh>
-
-      <mesh position={[0, -1.5, -1.5]} castShadow receiveShadow>
-        <boxBufferGeometry attach="geometry" args={[2, 2, 2]} />
-        <meshLambertMaterial
-          attach="material"
-          color="#0000ff"
-          emissive="#0000ff"
-          emissiveIntensity={0.25}
-        />
-      </mesh>
-
-      <mesh position={[0, -1.5, 1.5]} castShadow receiveShadow>
-        <boxBufferGeometry attach="geometry" args={[2, 2, 2]} />
-        <meshLambertMaterial attach="material" color="#ff0000" />
       </mesh>
 
       <directionalLight intensity={1} position={[-2.5, 2.5, 4]} castShadow />
