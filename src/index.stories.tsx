@@ -7,7 +7,9 @@ import { Line } from '@react-three/drei/Line';
 import * as THREE from 'three';
 import { CSG } from '@jscad/csg';
 
-import { CSGGeometry } from './CSGMesh';
+const {
+  Geometry: CSGGeometry
+} = require('../sk-csg-modeler/packages/modeler-csg/src/index');
 
 export default {
   title: 'Basic scene',
