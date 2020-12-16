@@ -33,7 +33,14 @@ function createHelpers<Cell>(
   };
 }
 
-type CellSetter<Cell> = (helpers: Helpers<Cell>) => Cell | undefined;
+interface CellAreaSpec<Cell> {
+  self: Cell | undefined;
+  xPrev?: Cell | undefined;
+  xNext?: Cell | undefined;
+  yPrev?: Cell | undefined;
+  yNext?: Cell | undefined;
+}
+type CellSetter<Cell> = (helpers: Helpers<Cell>) => CellAreaSpec<Cell>;
 
 function createGridState<Cell>(gridWidth: number, gridHeight: number) {
   const GridContext = React.createContext<GridContextValue<Cell> | null>(null);
@@ -62,24 +69,59 @@ function createGridState<Cell>(gridWidth: number, gridHeight: number) {
 
     const [grid, setGrid] = ctxValue;
 
-    const cellObject = useMemo(() => {}, [grid]);
-
     // static updater function
     const cellUpdater = useCallback(
       (callback: CellSetter<Cell>) => {
         setGrid((prev) => {
-          const newCell = callback(
+          const newCellSpec = callback(
             createHelpers(prev, gridWidth, gridHeight, x, y)
           );
 
+          // copy state and update based on spec
           const newState = [...prev];
-          newState[cellIndex] = newCell;
+
+          newState[cellIndex] = newCellSpec.self;
+
+          if (Object.prototype.hasOwnProperty.call(newCellSpec, 'xPrev')) {
+            if (x <= 0) {
+              throw new Error('no xPrev');
+            }
+
+            newState[cellIndex - 1] = newCellSpec.xPrev;
+          }
+
+          if (Object.prototype.hasOwnProperty.call(newCellSpec, 'xNext')) {
+            if (x >= gridWidth - 1) {
+              throw new Error('no xNext');
+            }
+
+            newState[cellIndex + 1] = newCellSpec.xNext;
+          }
+
+          if (Object.prototype.hasOwnProperty.call(newCellSpec, 'yPrev')) {
+            if (y <= 0) {
+              throw new Error('no yPrev');
+            }
+
+            newState[cellIndex - gridWidth] = newCellSpec.yPrev;
+          }
+
+          if (Object.prototype.hasOwnProperty.call(newCellSpec, 'yNext')) {
+            if (y >= gridHeight - 1) {
+              throw new Error('no yNext');
+            }
+
+            newState[cellIndex + gridWidth] = newCellSpec.yNext;
+          }
 
           return newState;
         });
       },
       [x, y]
     );
+
+    // return current reference cell @todo also allow querying nearby cells at render time?
+    return [grid[cellIndex], cellUpdater];
   }
 
   return [GridProvider, useGridCell];
