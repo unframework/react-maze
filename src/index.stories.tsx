@@ -6,7 +6,7 @@ import { MapControls } from '@react-three/drei/MapControls';
 import { Line } from '@react-three/drei/Line';
 import * as THREE from 'three';
 
-import { GRID_CELL_SIZE, CARDINAL_DIR_LIST } from './grid';
+import { GRID_CELL_SIZE, CARDINAL_DIR_LIST } from './GridState';
 import { TileMesh } from './TileMesh';
 
 export default {
