@@ -6,7 +6,12 @@ import { MapControls } from '@react-three/drei/MapControls';
 import { Line } from '@react-three/drei/Line';
 import * as THREE from 'three';
 
-import { GRID_CELL_SIZE, CARDINAL_DIR_LIST } from './GridState';
+import {
+  GRID_CELL_SIZE,
+  CARDINAL_DIR_LIST,
+  getGridDirectionAcross,
+  createGridState
+} from './GridState';
 import { TileMesh } from './TileMesh';
 
 export default {
@@ -18,6 +23,12 @@ export default {
 
 const GRID_WIDTH = 4;
 const GRID_HEIGHT = 4;
+
+const [GridProvider, useGridCell] = createGridState<{
+  id: symbol;
+  entry: number;
+  exit: number | null;
+}>(GRID_WIDTH, GRID_HEIGHT, { id: Symbol(), entry: 0, exit: null });
 
 const TileMeshPreview: React.FC<{
   x: number;
@@ -47,40 +58,34 @@ const TileMeshPreview: React.FC<{
   );
 };
 
-const ProposedTileOffshoot: React.FC<{
-  grid: number[];
+const ProposedTileProduction: React.FC<{
   x: number;
   y: number;
-  onPlaced: (exit: number) => void;
-}> = ({ grid, x, y, onPlaced }) => {
-  const onPlacedRef = useRef(onPlaced);
-  onPlacedRef.current = onPlaced;
-
+}> = ({ x, y }) => {
   const [attempts, setAttempts] = useState(() =>
     CARDINAL_DIR_LIST.map((_, index) => index).sort(() => Math.random() - 0.5)
   );
 
+  // interactive delay
   const { result: isReady } = useAsync(() => {
     return new Promise((resolve) => setTimeout(resolve, 200)).then(() => true);
   }, [attempts]);
 
+  // nothing else to do
   if (attempts.length === 0) {
     return null;
   }
 
   const exit = attempts[0];
-  const nextEntry = (exit + 2) % CARDINAL_DIR_LIST.length; // diametral opposite
+  const nextEntry = getGridDirectionAcross(exit); // diametral opposite
   const [dx, dy] = CARDINAL_DIR_LIST[exit];
 
   return isReady ? (
     <ProposedTile
-      grid={grid}
+      key={exit} // always re-create for new attempts
       entry={nextEntry}
       x={x + dx}
       y={y + dy}
-      onPlaced={() => {
-        onPlacedRef.current(exit);
-      }}
       onRejected={() => {
         // try next config
         setAttempts((prev) => prev.slice(1));
@@ -107,67 +112,74 @@ const ProposedTileOffshoot: React.FC<{
 };
 
 const ProposedTile: React.FC<{
-  grid?: number[];
+  isFirst?: boolean;
   entry: number;
   x: number;
   y: number;
-  onPlaced?: () => void;
   onRejected?: () => void;
-}> = ({ grid, entry, x, y, onPlaced, onRejected }) => {
-  const onPlacedRef = useRef(onPlaced);
-  onPlacedRef.current = onPlaced;
+}> = ({ isFirst, entry, x, y, onRejected }) => {
   const onRejectedRef = useRef(onRejected);
   onRejectedRef.current = onRejected;
 
-  const [exit, setExit] = useState(null as number | null);
-
-  const updatedGrid = useMemo(() => {
-    if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
-      return null;
-    }
-
-    const currentGrid = grid || [];
-    const cellIndex = y * GRID_WIDTH + x;
-
-    if (currentGrid[cellIndex]) {
-      return null;
-    }
-
-    const result = [...currentGrid];
-    result[cellIndex] = 1;
-    return result;
-  }, [grid, x, y]);
+  const id = useMemo(() => Symbol(), []);
+  const [cell, setCell] = useGridCell(x, y);
 
   useEffect(() => {
-    if (!updatedGrid && onRejectedRef.current) {
+    setCell((prev) => {
+      // already claimed
+      if (prev.value) {
+        return null;
+      }
+
+      const self = {
+        id,
+        entry,
+        exit: null
+      };
+
+      // if first, no previous neighbour to update
+      if (isFirst) {
+        return { self };
+      }
+
+      // set self and update previous neighbour exit
+      const from = prev.getCell(entry);
+      if (!from) {
+        throw new Error('from-cell missing');
+      }
+
+      return {
+        self,
+
+        [entry]: {
+          ...from,
+          exit: getGridDirectionAcross(entry)
+        }
+      };
+    });
+  }, []);
+
+  // if there is already someone else in this cell, report rejection
+  useEffect(() => {
+    if (cell && cell.id !== id && onRejectedRef.current) {
       onRejectedRef.current();
     }
+  }, [cell]);
 
-    if (updatedGrid && onPlacedRef.current) {
-      onPlacedRef.current();
-    }
-  }, [updatedGrid]);
-
-  if (!updatedGrid) {
+  // nothing to do further if not claimed
+  if (!cell || cell.id !== id) {
     return null;
   }
 
   return (
     <>
-      {exit === null ? (
+      {cell.exit === null ? (
         <TileMeshPreview x={x} y={y} entry={entry} />
       ) : (
-        <TileMesh x={x} y={y} entry={entry} exit={exit} />
+        <TileMesh x={x} y={y} entry={entry} exit={cell.exit} />
       )}
 
-      {updatedGrid && (
-        <ProposedTileOffshoot
-          grid={updatedGrid}
-          x={x}
-          y={y}
-          onPlaced={setExit}
-        />
-      )}
+      <ProposedTileProduction x={x} y={y} />
     </>
   );
 };
@@ -199,7 +211,9 @@ export const Main: Story = () => (
           0
         ]}
       >
-        <ProposedTile entry={3} x={0} y={0} />
+        <GridProvider>
+          <ProposedTile isFirst entry={3} x={0} y={0} />
+        </GridProvider>
       </group>
 
       <directionalLight intensity={1} position={[-1, 1, 4]} castShadow />

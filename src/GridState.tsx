@@ -9,6 +9,10 @@ export const CARDINAL_DIR_LIST = [
   [0, -1]
 ];
 
+export function getGridDirectionAcross(dir: number) {
+  return (dir + 2) % 4;
+}
+
 type GridState<Cell> = Array<Cell | undefined>;
 type GridContextValue<Cell> = [
   GridState<Cell>,
@@ -17,6 +21,7 @@ type GridContextValue<Cell> = [
 
 interface Helpers<Cell> {
   value: Cell | undefined;
+  getCell(dir: number): Cell | undefined;
 }
 
 function createHelpers<Cell>(
@@ -24,23 +29,32 @@ function createHelpers<Cell>(
   gridWidth: number,
   gridHeight: number,
   x: number,
-  y: number
+  y: number,
+  emptyCell: Cell | undefined
 ): Helpers<Cell> {
-  const cellIndex = x + y * gridWidth;
+  function accessor(nx: number, ny: number) {
+    if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
+      return emptyCell;
+    }
+
+    return grid[nx + ny * gridWidth];
+  }
 
   return {
-    value: grid[cellIndex]
+    value: accessor(x, y),
+
+    getCell(dir: number) {
+      const offset = CARDINAL_DIR_LIST[dir];
+      return accessor(x + offset[0], y + offset[1]);
+    }
   };
 }
 
 interface CellAreaSpec<Cell> {
   self: Cell | undefined;
-  xPrev?: Cell | undefined;
-  xNext?: Cell | undefined;
-  yPrev?: Cell | undefined;
-  yNext?: Cell | undefined;
+  [dir: number]: Cell | undefined;
 }
-type CellSetter<Cell> = (helpers: Helpers<Cell>) => CellAreaSpec<Cell>;
+type CellSetter<Cell> = (helpers: Helpers<Cell>) => CellAreaSpec<Cell> | null;
 
 type CellHookReturn<Cell> = [
   Cell | undefined,
@@ -50,11 +64,12 @@ type CellHook<Cell> = (x: number, y: number) => CellHookReturn<Cell>;
 
 export function createGridState<Cell>(
   gridWidth: number,
-  gridHeight: number
+  gridHeight: number,
+  emptyCell: Cell | undefined
 ): [React.FC, CellHook<Cell>] {
   const GridContext = React.createContext<GridContextValue<Cell> | null>(null);
 
-  const GridProvider: React.FC = () => {
+  const GridProvider: React.FC = ({ children }) => {
     const [grid, setGrid] = useState(
       () => new Array<Cell | undefined>(gridWidth * gridHeight)
     );
@@ -64,12 +79,15 @@ export function createGridState<Cell>(
       setGrid
     ]);
 
-    return <GridContext.Provider value={ctxValue}></GridContext.Provider>;
+    return (
+      <GridContext.Provider value={ctxValue}>{children}</GridContext.Provider>
+    );
   };
 
   function useGridCell(ox: number, oy: number): CellHookReturn<Cell> {
     // read only once @todo check for changes?
     const [[x, y, cellIndex]] = useState(() => [ox, oy, ox + oy * gridWidth]);
+    const isOutOfBounds = x < 0 || x >= gridWidth || y < 0 || y >= gridHeight;
 
     const ctxValue = useContext(GridContext);
     if (!ctxValue) {
@@ -83,44 +101,36 @@ export function createGridState<Cell>(
       (callback: CellSetter<Cell>) => {
         setGrid((prev) => {
           const newCellSpec = callback(
-            createHelpers(prev, gridWidth, gridHeight, x, y)
+            createHelpers(prev, gridWidth, gridHeight, x, y, emptyCell)
           );
+
+          // bail out if no change was requested
+          if (!newCellSpec) {
+            return prev;
+          }
+
+          // at least one change was requested: check if we are in bounds
+          if (isOutOfBounds) {
+            throw new Error(`cannot update out of bounds: ${x},${y}`);
+          }
 
           // copy state and update based on spec
           const newState = [...prev];
 
           newState[cellIndex] = newCellSpec.self;
 
-          if (Object.prototype.hasOwnProperty.call(newCellSpec, 'xPrev')) {
-            if (x <= 0) {
-              throw new Error('no xPrev');
+          for (let dir = 0; dir < CARDINAL_DIR_LIST.length; dir += 1) {
+            if (Object.prototype.hasOwnProperty.call(newCellSpec, dir)) {
+              const offset = CARDINAL_DIR_LIST[dir];
+              const nx = x + offset[0];
+              const ny = y + offset[1];
+
+              if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
+                throw new Error(`setting out of range: ${nx},${ny}`);
+              }
+
+              newState[nx + ny * gridWidth] = newCellSpec[dir];
             }
-
-            newState[cellIndex - 1] = newCellSpec.xPrev;
-          }
-
-          if (Object.prototype.hasOwnProperty.call(newCellSpec, 'xNext')) {
-            if (x >= gridWidth - 1) {
-              throw new Error('no xNext');
-            }
-
-            newState[cellIndex + 1] = newCellSpec.xNext;
-          }
-
-          if (Object.prototype.hasOwnProperty.call(newCellSpec, 'yPrev')) {
-            if (y <= 0) {
-              throw new Error('no yPrev');
-            }
-
-            newState[cellIndex - gridWidth] = newCellSpec.yPrev;
-          }
-
-          if (Object.prototype.hasOwnProperty.call(newCellSpec, 'yNext')) {
-            if (y >= gridHeight - 1) {
-              throw new Error('no yNext');
-            }
-
-            newState[cellIndex + gridWidth] = newCellSpec.yNext;
           }
 
           return newState;
@@ -130,7 +140,7 @@ export function createGridState<Cell>(
     );
 
     // return current reference cell @todo also allow querying nearby cells at render time?
-    return [grid[cellIndex], cellUpdater];
+    return [isOutOfBounds ? emptyCell : grid[cellIndex], cellUpdater];
   }
 
   return [GridProvider, useGridCell];
