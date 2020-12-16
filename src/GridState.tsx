@@ -42,7 +42,16 @@ interface CellAreaSpec<Cell> {
 }
 type CellSetter<Cell> = (helpers: Helpers<Cell>) => CellAreaSpec<Cell>;
 
-function createGridState<Cell>(gridWidth: number, gridHeight: number) {
+type CellHookReturn<Cell> = [
+  Cell | undefined,
+  (callback: CellSetter<Cell>) => void
+];
+type CellHook<Cell> = (x: number, y: number) => CellHookReturn<Cell>;
+
+export function createGridState<Cell>(
+  gridWidth: number,
+  gridHeight: number
+): [React.FC, CellHook<Cell>] {
   const GridContext = React.createContext<GridContextValue<Cell> | null>(null);
 
   const GridProvider: React.FC = () => {
@@ -58,7 +67,7 @@ function createGridState<Cell>(gridWidth: number, gridHeight: number) {
     return <GridContext.Provider value={ctxValue}></GridContext.Provider>;
   };
 
-  function useGridCell(ox: number, oy: number) {
+  function useGridCell(ox: number, oy: number): CellHookReturn<Cell> {
     // read only once @todo check for changes?
     const [[x, y, cellIndex]] = useState(() => [ox, oy, ox + oy * gridWidth]);
 
