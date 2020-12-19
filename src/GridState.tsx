@@ -7,6 +7,7 @@ import React, {
   useRef
 } from 'react';
 
+// @todo expose directions as just X+/X-/etc symbols instead of 0..3
 const CARDINAL_DIR_LIST: [number, number][] = [
   [1, 0],
   [0, 1],
