@@ -25,10 +25,8 @@ const GRID_WIDTH = 4;
 const GRID_HEIGHT = 4;
 
 const [GridProvider, useGridCell] = createGridState<{
-  id: symbol;
-  entry: number;
-  exit: number | null;
-}>(GRID_WIDTH, GRID_HEIGHT, { id: Symbol(), entry: 0, exit: null });
+  onExit?: (exit: number) => void;
+}>(GRID_WIDTH, GRID_HEIGHT, {});
 
 const TileMeshPreview: React.FC<{
   x: number;
@@ -61,7 +59,8 @@ const TileMeshPreview: React.FC<{
 const ProposedTileProduction: React.FC<{
   x: number;
   y: number;
-}> = ({ x, y }) => {
+  onPlaced: (exit: number) => void;
+}> = ({ x, y, onPlaced }) => {
   const [attempts, setAttempts] = useState(() =>
     CARDINAL_DIR_LIST.map((_, index) => index).sort(() => Math.random() - 0.5)
   );
@@ -86,7 +85,10 @@ const ProposedTileProduction: React.FC<{
       entry={nextEntry}
       x={x + dx}
       y={y + dy}
-      onRejected={() => {
+      onPlaced={() => {
+        onPlaced(exit);
+      }}
+      onOccupied={() => {
         // try next config
         setAttempts((prev) => prev.slice(1));
       }}
@@ -116,70 +118,33 @@ const ProposedTile: React.FC<{
   entry: number;
   x: number;
   y: number;
-  onRejected?: () => void;
-}> = ({ isFirst, entry, x, y, onRejected }) => {
-  const onRejectedRef = useRef(onRejected);
-  onRejectedRef.current = onRejected;
+  onPlaced?: () => void;
+  onOccupied?: () => void;
+}> = ({ isFirst, entry, x, y, onPlaced, onOccupied }) => {
+  const [exit, setExit] = useState<number | null>(null);
 
-  const id = useMemo(() => Symbol(), []);
-  const [cell, setCell] = useGridCell(x, y);
+  const cell = useGridCell(x, y, {}, onOccupied);
 
   useEffect(() => {
-    setCell((prev) => {
-      // already claimed
-      if (prev.value) {
-        return null;
-      }
-
-      const self = {
-        id,
-        entry,
-        exit: null
-      };
-
-      // if first, no previous neighbour to update
-      if (isFirst) {
-        return { self };
-      }
-
-      // set self and update previous neighbour exit
-      const from = prev.getCell(entry);
-      if (!from) {
-        throw new Error('from-cell missing');
-      }
-
-      return {
-        self,
-
-        [entry]: {
-          ...from,
-          exit: getGridDirectionAcross(entry)
-        }
-      };
-    });
-  }, []);
-
-  // if there is already someone else in this cell, report rejection
-  useEffect(() => {
-    if (cell && cell.id !== id && onRejectedRef.current) {
-      onRejectedRef.current();
+    if (cell && onPlaced) {
+      onPlaced();
     }
   }, [cell]);
 
   // nothing to do further if not claimed
-  if (!cell || cell.id !== id) {
+  if (!cell) {
     return null;
   }
 
   return (
     <>
-      {cell.exit === null ? (
+      {exit === null ? (
         <TileMeshPreview x={x} y={y} entry={entry} />
       ) : (
-        <TileMesh x={x} y={y} entry={entry} exit={cell.exit} />
+        <TileMesh x={x} y={y} entry={entry} exit={exit} />
       )}
 
-      <ProposedTileProduction x={x} y={y} />
+      <ProposedTileProduction x={x} y={y} onPlaced={setExit} />
     </>
   );
 };
