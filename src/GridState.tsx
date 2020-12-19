@@ -33,6 +33,7 @@ type CellHook<Cell> = (
   x: number,
   y: number,
   value: Cell,
+  onPlaced?: () => void,
   onOccupied?: (existingCell?: Cell) => void
 ) => GridCellInfo<Cell> | null;
 
@@ -57,6 +58,7 @@ export function createGridState<Cell>(
     x: number,
     y: number,
     value: Cell,
+    onPlaced?: () => void,
     onOccupied?: (existingCell: Cell) => void
   ): GridCellInfo<Cell> | null {
     const isOutOfBounds = x < 0 || x >= gridWidth || y < 0 || y >= gridHeight;
@@ -67,6 +69,8 @@ export function createGridState<Cell>(
     }
 
     // wrap in ref to avoid re-triggering
+    const onPlacedRef = useRef(onPlaced);
+    onPlacedRef.current = onPlaced;
     const onOccupiedRef = useRef(onOccupied);
     onOccupiedRef.current = onOccupied;
     const firstValueRef = useRef(value); // read only once
@@ -108,6 +112,12 @@ export function createGridState<Cell>(
 
       // mark as registered (the caller will know on next render)
       setCellInfo(cellInfo);
+
+      // notify
+      if (onPlacedRef.current) {
+        console.log('placed');
+        onPlacedRef.current();
+      }
 
       // on unmount, clean up (checking if someone else took over the cell, just in case)
       return () => {

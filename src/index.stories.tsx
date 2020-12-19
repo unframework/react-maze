@@ -19,9 +19,11 @@ export default {
 const GRID_WIDTH = 4;
 const GRID_HEIGHT = 4;
 
-const [GridProvider, useGridCell] = createGridState<{
-  onExit?: (exit: number) => void;
-}>(GRID_WIDTH, GRID_HEIGHT, {});
+const [GridProvider, useGridCell] = createGridState<{}>(
+  GRID_WIDTH,
+  GRID_HEIGHT,
+  {}
+);
 
 const TileMeshPreview: React.FC<{
   x: number;
@@ -118,13 +120,7 @@ const ProposedTile: React.FC<{
 }> = ({ isFirst, entry, x, y, onPlaced, onOccupied }) => {
   const [exit, setExit] = useState<number | null>(null);
 
-  const cell = useGridCell(x, y, {}, onOccupied);
-
-  useEffect(() => {
-    if (cell && onPlaced) {
-      onPlaced();
-    }
-  }, [cell]);
+  const cell = useGridCell(x, y, {}, onPlaced, onOccupied);
 
   // nothing to do further if not claimed
   if (!cell) {
