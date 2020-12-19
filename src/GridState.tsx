@@ -7,16 +7,18 @@ import React, {
   useRef
 } from 'react';
 
-export const GRID_CELL_SIZE = 2;
-
-export const CARDINAL_DIR_LIST = [
+const CARDINAL_DIR_LIST: [number, number][] = [
   [1, 0],
   [0, 1],
   [-1, 0],
   [0, -1]
 ];
 
-export function getGridDirectionAcross(dir: number) {
+export function directionXY(dir: number): [number, number] {
+  return CARDINAL_DIR_LIST[dir];
+}
+
+export function directionAcross(dir: number) {
   return (dir + 2) % 4;
 }
 

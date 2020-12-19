@@ -5,7 +5,9 @@ const {
   Geometry: CSGGeometry
 } = require('../sk-csg-modeler/packages/modeler-csg/src/index');
 
-import { GRID_CELL_SIZE, CARDINAL_DIR_LIST } from './GridState';
+import { directionXY } from './GridState';
+
+export const GRID_CELL_SIZE = 2;
 
 export const TileMesh: React.FC<{
   x: number;
@@ -13,8 +15,8 @@ export const TileMesh: React.FC<{
   entry: number;
   exit: number;
 }> = ({ entry, exit, x, y }) => {
-  const [px, py] = CARDINAL_DIR_LIST[entry];
-  const [nx, ny] = CARDINAL_DIR_LIST[exit];
+  const [px, py] = directionXY(entry);
+  const [nx, ny] = directionXY(exit);
 
   return (
     <>

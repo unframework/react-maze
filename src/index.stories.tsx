@@ -6,13 +6,8 @@ import { MapControls } from '@react-three/drei/MapControls';
 import { Line } from '@react-three/drei/Line';
 import * as THREE from 'three';
 
-import {
-  GRID_CELL_SIZE,
-  CARDINAL_DIR_LIST,
-  getGridDirectionAcross,
-  createGridState
-} from './GridState';
-import { TileMesh } from './TileMesh';
+import { directionXY, directionAcross, createGridState } from './GridState';
+import { TileMesh, GRID_CELL_SIZE } from './TileMesh';
 
 export default {
   title: 'Basic scene',
@@ -33,7 +28,7 @@ const TileMeshPreview: React.FC<{
   y: number;
   entry: number;
 }> = ({ entry, x, y }) => {
-  const [px, py] = CARDINAL_DIR_LIST[entry];
+  const [px, py] = directionXY(entry);
 
   return (
     <>
@@ -62,31 +57,31 @@ const ProposedTileProduction: React.FC<{
   onPlaced: (exit: number) => void;
 }> = ({ x, y, onPlaced }) => {
   const [attempts, setAttempts] = useState(() =>
-    CARDINAL_DIR_LIST.map((_, index) => index).sort(() => Math.random() - 0.5)
+    [...new Array(4)].map((_, index) => index).sort(() => Math.random() - 0.5)
   );
 
-  // interactive delay
+  // interactive delay (re-triggered on every attempt)
   const { result: isReady } = useAsync(() => {
     return new Promise((resolve) => setTimeout(resolve, 200)).then(() => true);
-  }, [attempts]);
+  }, [attempts.length]);
 
-  // nothing else to do
+  // if we run out of attempts, nothing else to do
   if (attempts.length === 0) {
     return null;
   }
 
-  const exit = attempts[0];
-  const nextEntry = getGridDirectionAcross(exit); // diametral opposite
-  const [dx, dy] = CARDINAL_DIR_LIST[exit];
+  const currentAttemptExit = attempts[0];
+  const nextEntry = directionAcross(currentAttemptExit); // diametral opposite
+  const [dx, dy] = directionXY(currentAttemptExit);
 
   return isReady ? (
     <ProposedTile
-      key={exit} // always re-create for new attempts
+      key={currentAttemptExit} // always re-create for new attempts
       entry={nextEntry}
       x={x + dx}
       y={y + dy}
       onPlaced={() => {
-        onPlaced(exit);
+        onPlaced(currentAttemptExit);
       }}
       onOccupied={() => {
         // try next config
