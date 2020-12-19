@@ -6,7 +6,13 @@ import { MapControls } from '@react-three/drei/MapControls';
 import { Line } from '@react-three/drei/Line';
 import * as THREE from 'three';
 
-import { directionXY, directionAcross, createGridState } from './GridState';
+import {
+  directionXY,
+  directionAcross,
+  createGridState,
+  GRID_DIRECTION_COUNT,
+  GridCellInfo
+} from './GridState';
 import { TileMesh, GRID_CELL_SIZE } from './TileMesh';
 
 export default {
@@ -54,12 +60,13 @@ const TileMeshPreview: React.FC<{
 };
 
 const ProposedTileProduction: React.FC<{
-  x: number;
-  y: number;
+  cell: GridCellInfo<unknown>;
   onPlaced: (exit: number) => void;
-}> = ({ x, y, onPlaced }) => {
+}> = ({ cell, onPlaced }) => {
   const [attempts, setAttempts] = useState(() =>
-    [...new Array(4)].map((_, index) => index).sort(() => Math.random() - 0.5)
+    [...new Array(GRID_DIRECTION_COUNT)]
+      .map((_, index) => index)
+      .sort(() => Math.random() - 0.5)
   );
 
   // interactive delay (re-triggered on every attempt)
@@ -72,16 +79,17 @@ const ProposedTileProduction: React.FC<{
     return null;
   }
 
+  const [x, y] = cell.getXY();
+
   const currentAttemptExit = attempts[0];
-  const nextEntry = directionAcross(currentAttemptExit); // diametral opposite
-  const [dx, dy] = directionXY(currentAttemptExit);
+  const [nx, ny] = cell.getNeighborXY(currentAttemptExit);
 
   return isReady ? (
     <ProposedTile
       key={currentAttemptExit} // always re-create for new attempts
-      entry={nextEntry}
-      x={x + dx}
-      y={y + dy}
+      entry={directionAcross(currentAttemptExit)}
+      x={nx}
+      y={ny}
       onPlaced={() => {
         onPlaced(currentAttemptExit);
       }}
@@ -94,13 +102,13 @@ const ProposedTileProduction: React.FC<{
     <Line
       points={[
         [
-          (x + dx * 0.5) * GRID_CELL_SIZE,
-          (y + dy * 0.5) * GRID_CELL_SIZE,
+          (x + (nx - x) * 0.5) * GRID_CELL_SIZE,
+          (y + (ny - y) * 0.5) * GRID_CELL_SIZE,
           -0.1
         ],
         [
-          (x + dx * 0.75) * GRID_CELL_SIZE,
-          (y + dy * 0.75) * GRID_CELL_SIZE,
+          (x + (nx - x) * 0.75) * GRID_CELL_SIZE,
+          (y + (ny - y) * 0.75) * GRID_CELL_SIZE,
           -0.1
         ]
       ]}
@@ -135,7 +143,7 @@ const ProposedTile: React.FC<{
         <TileMesh x={x} y={y} entry={entry} exit={exit} />
       )}
 
-      <ProposedTileProduction x={x} y={y} onPlaced={setExit} />
+      <ProposedTileProduction cell={cell} onPlaced={setExit} />
     </>
   );
 };

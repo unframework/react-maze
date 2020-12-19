@@ -14,6 +14,8 @@ const CARDINAL_DIR_LIST: [number, number][] = [
   [0, -1]
 ];
 
+export const GRID_DIRECTION_COUNT = CARDINAL_DIR_LIST.length;
+
 export function directionXY(dir: number): [number, number] {
   return CARDINAL_DIR_LIST[dir];
 }
@@ -22,9 +24,41 @@ export function directionAcross(dir: number) {
   return (dir + 2) % 4;
 }
 
-interface GridCellInfo<Cell> {
+export interface GridCellInfo<Cell> {
   instanceId: number;
+
   value: Cell;
+
+  getXY: () => [number, number];
+  getNeighborXY: (dir: number) => [number, number];
+}
+
+function createCellInfo<Cell>(
+  x: number,
+  y: number,
+  value: Cell
+): GridCellInfo<Cell> {
+  const instanceId = ++idCounter;
+
+  const xy: [number, number] = [x, y];
+
+  const neighborXY = CARDINAL_DIR_LIST.map(([dx, dy]): [number, number] => [
+    x + dx,
+    y + dy
+  ]);
+
+  return {
+    instanceId,
+
+    value,
+
+    getXY() {
+      return xy;
+    },
+    getNeighborXY(dir: number) {
+      return neighborXY[dir];
+    }
+  };
 }
 
 type GridState<Cell> = Array<GridCellInfo<Cell> | undefined>;
@@ -107,7 +141,7 @@ export function createGridState<Cell>(
       }
 
       // register on grid
-      const cellInfo = { instanceId: ++idCounter, value };
+      const cellInfo = createCellInfo(x, y, value);
       grid[cellIndex] = cellInfo;
 
       // mark as registered (the caller will know on next render)
