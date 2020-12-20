@@ -41,7 +41,6 @@ type CellHook<Cell> = (
   x: number,
   y: number,
   value: Cell,
-  onPlaced?: (placedCell: GridCellInfo<Cell>) => void,
   onOccupied?: (existingCell?: Cell) => void
 ) => GridCellInfo<Cell> | null;
 
@@ -105,7 +104,6 @@ export function createGridState<Cell>(
     x: number,
     y: number,
     value: Cell,
-    onPlaced?: (placedCell: GridCellInfo<Cell>) => void,
     onOccupied?: (existingCell: Cell) => void
   ): GridCellInfo<Cell> | null {
     const isOutOfBounds = x < 0 || x >= gridWidth || y < 0 || y >= gridHeight;
@@ -116,8 +114,6 @@ export function createGridState<Cell>(
     }
 
     // wrap in ref to avoid re-triggering
-    const onPlacedRef = useRef(onPlaced);
-    onPlacedRef.current = onPlaced;
     const onOccupiedRef = useRef(onOccupied);
     onOccupiedRef.current = onOccupied;
     const firstValueRef = useRef(value); // read only once
@@ -154,21 +150,16 @@ export function createGridState<Cell>(
       }
 
       // register on grid
-      const cellInfo = createCellInfo(x, y, value, grid);
-      grid[cellIndex] = cellInfo;
+      const newCellInfo = createCellInfo(x, y, value, grid);
+      grid[cellIndex] = newCellInfo;
 
       // mark as registered (the caller will know on next render)
-      setCellInfo(cellInfo);
-
-      // notify
-      if (onPlacedRef.current) {
-        onPlacedRef.current(cellInfo);
-      }
+      setCellInfo(newCellInfo);
 
       // on unmount, clean up (checking if someone else took over the cell, just in case)
       return () => {
         const existingCellInfo = grid[cellIndex];
-        if (existingCellInfo === cellInfo) {
+        if (existingCellInfo === newCellInfo) {
           grid[cellIndex] = undefined;
         }
       };

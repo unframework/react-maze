@@ -29,34 +29,6 @@ const [GridProvider, useGridCell] = createGridState<{
   onExit?: (dir: number) => void;
 }>(GRID_WIDTH, GRID_HEIGHT, {});
 
-const TileMeshPreview: React.FC<{
-  x: number;
-  y: number;
-  entry: number;
-}> = ({ entry, x, y }) => {
-  const [px, py] = directionXY(entry);
-
-  return (
-    <>
-      <mesh position={[x * GRID_CELL_SIZE, y * GRID_CELL_SIZE, 0]} castShadow>
-        <planeBufferGeometry
-          args={[GRID_CELL_SIZE * 0.8, GRID_CELL_SIZE * 0.8]}
-        />
-        <meshLambertMaterial color="#f00" shadowSide={THREE.FrontSide} />
-
-        <Line
-          points={[
-            [px * 0.4 * GRID_CELL_SIZE, py * 0.4 * GRID_CELL_SIZE, -0.1],
-            [px * 0.5 * GRID_CELL_SIZE, py * 0.5 * GRID_CELL_SIZE, -0.1]
-          ]}
-          color="#00f"
-          lineWidth={2}
-        />
-      </mesh>
-    </>
-  );
-};
-
 const ProposedTileProduction: React.FC<{
   cell: GridCellInfo<unknown>;
 }> = ({ cell }) => {
@@ -67,6 +39,7 @@ const ProposedTileProduction: React.FC<{
   );
 
   // interactive delay (re-triggered on every attempt)
+  // @todo this causes a temporary flash of ProposedTile on second/etc attempts
   const { result: isReady } = useAsync(() => {
     return new Promise((resolve) => setTimeout(resolve, 200)).then(() => true);
   }, [attempts.length]);
@@ -119,24 +92,30 @@ const ProposedTile: React.FC<{
   y: number;
   onOccupied?: () => void;
 }> = ({ isFirst, entry, x, y, onOccupied }) => {
-  const [exit, setExit] = useState<number | null>(null);
+  const [exits, setExits] = useState<number[]>([]);
 
   const cell = useGridCell(
     x,
     y,
     {
-      onExit: setExit
-    },
-    (placedCell) => {
-      // notify cell from which we entered to complete the link
-      const fromCell = placedCell.getNeighbor(entry);
-
-      if (fromCell && fromCell.onExit) {
-        fromCell.onExit(directionAcross(entry));
-      }
+      onExit: (dir) =>
+        setExits((prev) => (prev.indexOf(dir) === -1 ? [...prev, dir] : []))
     },
     onOccupied
   );
+
+  useEffect(() => {
+    if (!cell) {
+      return;
+    }
+
+    // notify cell from which we entered to complete the link
+    const fromCell = cell.getNeighbor(entry);
+
+    if (fromCell && fromCell.onExit) {
+      fromCell.onExit(directionAcross(entry));
+    }
+  }, [cell]);
 
   // nothing to do further if not claimed
   if (!cell) {
@@ -145,11 +124,7 @@ const ProposedTile: React.FC<{
 
   return (
     <>
-      {exit === null ? (
-        <TileMeshPreview x={x} y={y} entry={entry} />
-      ) : (
-        <TileMesh x={x} y={y} entry={entry} exit={exit} />
-      )}
+      <TileMesh x={x} y={y} entry={entry} exits={exits} />
 
       <ProposedTileProduction cell={cell} />
     </>
