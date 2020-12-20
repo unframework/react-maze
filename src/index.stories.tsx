@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useAsyncCallback } from 'react-async-hook';
+import { useAsync } from 'react-async-hook';
 import { Story, Meta } from '@storybook/react';
 import { Canvas } from 'react-three-fiber';
 import { MapControls } from '@react-three/drei/MapControls';
@@ -29,89 +29,109 @@ const [GridProvider, useGridCell] = createGridState<{
   onExit?: (dir: number) => void;
 }>(GRID_WIDTH, GRID_HEIGHT, {});
 
-const ProposedTileProduction: React.FC<{
+const TileCheck: React.FC<{
+  cell: GridCellInfo<unknown>;
+  direction: number;
+  onResult: (isAvailable: boolean) => void;
+}> = ({ cell, direction, onResult }) => {
+  const [x, y] = cell.getXY();
+  const [nx, ny] = cell.getNeighborXY(direction);
+
+  const checkedCell = useGridCell(nx, ny, {});
+
+  // interactive delay
+  const { result: isReady } = useAsync(() => {
+    return new Promise((resolve) => setTimeout(resolve, 200)).then(() => true);
+  }, []);
+
+  useEffect(() => {
+    if (isReady) {
+      onResult(!!checkedCell);
+    }
+  }, [isReady, checkedCell]);
+
+  // @todo debug display
+  return (
+    <Line
+      points={[
+        [
+          (x + (nx - x) * 0.5) * GRID_CELL_SIZE,
+          (y + (ny - y) * 0.5) * GRID_CELL_SIZE,
+          -0.1
+        ],
+        [
+          (x + (nx - x) * 0.75) * GRID_CELL_SIZE,
+          (y + (ny - y) * 0.75) * GRID_CELL_SIZE,
+          -0.1
+        ]
+      ]}
+      color="#0f0"
+      lineWidth={2}
+    />
+  );
+};
+
+const TileProduction: React.FC<{
   cell: GridCellInfo<unknown>;
   onExhausted?: () => void;
 }> = ({ cell, onExhausted }) => {
-  const [directions] = useState(() =>
-    [...new Array(GRID_DIRECTION_COUNT)]
-      .map((_, index) => index)
-      .sort(() => Math.random() - 0.5)
+  const [currentAttempt, setCurrentAttempt] = useState<number>(0);
+  const attemptDirections = useMemo(
+    () =>
+      [...new Array(GRID_DIRECTION_COUNT)]
+        .map((_, index) => index)
+        .sort(() => Math.random() - 0.5),
+    []
   );
 
-  const [attempts, setAttempts] = useState<boolean[]>([]);
-
-  // interactive delay (re-triggered on every attempt)
-  const { result: currentAttempt, execute } = useAsyncCallback(
-    (attempt: number) => {
-      return new Promise((resolve) => setTimeout(resolve, 200)).then(
-        () => attempt
-      );
-    }
-  );
+  const [productions, setProductions] = useState<number[]>([]);
 
   useEffect(() => {
-    if (currentAttempt === undefined) {
-      return;
-    }
-
-    if (currentAttempt >= directions.length) {
-      if (onExhausted) onExhausted();
-    } else {
-      setAttempts((prev) => [...prev, true]);
+    if (currentAttempt >= attemptDirections.length && onExhausted) {
+      onExhausted();
     }
   }, [currentAttempt]);
 
-  useEffect(() => {
-    execute(0);
-  }, []);
-
   return (
     <>
-      {attempts.map((attempt, index) => {
-        // check for a dud
-        if (!attempt) {
-          return null;
-        }
-
-        const currentAttemptExit = directions[index];
-        const [nx, ny] = cell.getNeighborXY(currentAttemptExit);
+      {productions.map((direction) => {
+        const [nx, ny] = cell.getNeighborXY(direction);
 
         return (
-          <ProposedTile
-            key={currentAttemptExit} // always re-create for new attempts
-            entry={directionAcross(currentAttemptExit)}
+          <Tile
+            key={direction} // always re-create for new attempts
+            entry={directionAcross(direction)}
             x={nx}
             y={ny}
-            onOccupied={() => {
-              // mark as a dud
-              setAttempts((prev) => [
-                ...prev.slice(0, index),
-                false,
-                ...prev.slice(index + 1)
-              ]);
-
-              // kick off next attempt delay
-              execute(index + 1);
-            }}
-            onExhausted={() => {
-              execute(index + 1);
-            }}
           />
         );
       })}
+
+      {currentAttempt < attemptDirections.length && (
+        <TileCheck
+          key={currentAttempt} // re-create on every new attempt
+          cell={cell}
+          direction={attemptDirections[currentAttempt]}
+          onResult={(isAvailable) => {
+            setProductions((prev) => [
+              ...prev,
+              attemptDirections[currentAttempt]
+            ]);
+            setCurrentAttempt(currentAttempt + 1);
+          }}
+        />
+      )}
     </>
   );
 };
 
-const ProposedTile: React.FC<{
-  isFirst?: boolean;
+const Tile: React.FC<{
   entry: number;
   x: number;
   y: number;
   onOccupied?: () => void;
   onExhausted?: () => void;
-}> = ({ isFirst, entry, x, y, onOccupied, onExhausted }) => {
+}> = ({ entry, x, y, onOccupied, onExhausted }) => {
   const [exits, setExits] = useState<number[]>([]);
 
   const cell = useGridCell(
@@ -146,7 +166,7 @@ const ProposedTile: React.FC<{
     <>
       <TileMesh x={x} y={y} entry={entry} exits={exits} />
 
-      <ProposedTileProduction cell={cell} onExhausted={onExhausted} />
+      <TileProduction cell={cell} onExhausted={onExhausted} />
     </>
   );
 };
@@ -181,7 +201,7 @@ export const Main: Story = () => (
         ]}
       >
         <GridProvider>
-          <ProposedTile isFirst entry={3} x={0} y={0} />
+          <Tile entry={3} x={0} y={0} />
         </GridProvider>
       </group>
 
