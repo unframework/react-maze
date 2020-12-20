@@ -106,8 +106,6 @@ export function createGridState<Cell>(
     value: Cell,
     onOccupied?: (existingCell: Cell) => void
   ): GridCellInfo<Cell> | null {
-    const isOutOfBounds = x < 0 || x >= gridWidth || y < 0 || y >= gridHeight;
-
     const grid = useContext(GridContext);
     if (!grid) {
       throw new Error('not in grid');
@@ -129,7 +127,7 @@ export function createGridState<Cell>(
     // perform initial registration/unregistration
     useEffect(() => {
       // nothing to do
-      if (isOutOfBounds) {
+      if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) {
         // notify
         if (onOccupiedRef.current) {
           onOccupiedRef.current(emptyCell);
@@ -163,7 +161,7 @@ export function createGridState<Cell>(
           grid[cellIndex] = undefined;
         }
       };
-    }, [x, y, isOutOfBounds]);
+    }, [x, y]);
 
     // expose current state to caller
     return cellInfo;

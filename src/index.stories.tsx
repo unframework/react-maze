@@ -141,20 +141,14 @@ const Tile: React.FC<{
   entry: number;
   x: number;
   y: number;
-  onOccupied?: () => void;
   onExhausted?: () => void;
-}> = ({ entry, x, y, onOccupied, onExhausted }) => {
+}> = ({ entry, x, y, onExhausted }) => {
   const [exits, setExits] = useState<number[]>([]);
 
-  const cell = useGridCell(
-    x,
-    y,
-    {
-      onExit: (dir) =>
-        setExits((prev) => (prev.indexOf(dir) === -1 ? [...prev, dir] : []))
-    },
-    onOccupied
-  );
+  const cell = useGridCell(x, y, {
+    onExit: (dir) =>
+      setExits((prev) => (prev.indexOf(dir) === -1 ? [...prev, dir] : []))
+  });
 
   useEffect(() => {
     if (!cell) {
