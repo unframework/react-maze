@@ -55,13 +55,13 @@ const TileCheck: React.FC<{
     <Line
       points={[
         [
-          (x + (nx - x) * 0.5) * GRID_CELL_SIZE,
-          (y + (ny - y) * 0.5) * GRID_CELL_SIZE,
+          (x + (nx - x) * 0.25) * GRID_CELL_SIZE,
+          (y + (ny - y) * 0.25) * GRID_CELL_SIZE,
           -0.1
         ],
         [
-          (x + (nx - x) * 0.75) * GRID_CELL_SIZE,
-          (y + (ny - y) * 0.75) * GRID_CELL_SIZE,
+          (x + (nx - x) * 0.5) * GRID_CELL_SIZE,
+          (y + (ny - y) * 0.5) * GRID_CELL_SIZE,
           -0.1
         ]
       ]}
@@ -85,6 +85,10 @@ const TileProduction: React.FC<{
   );
 
   const [productions, setProductions] = useState<number[]>([]);
+  const [
+    currentIncompleteProduction,
+    setCurrentIncompleteProduction
+  ] = useState<number>(-1);
 
   useEffect(() => {
     if (currentAttempt >= attemptDirections.length && onExhausted) {
@@ -99,28 +103,36 @@ const TileProduction: React.FC<{
 
         return (
           <Tile
-            key={direction} // always re-create for new attempts
+            key={direction}
             entry={directionAcross(direction)}
             x={nx}
             y={ny}
+            onExhausted={() => {
+              setCurrentAttempt((prev) => prev + 1);
+            }}
           />
         );
       })}
 
-      {currentAttempt < attemptDirections.length && (
-        <TileCheck
-          key={currentAttempt} // re-create on every new attempt
-          cell={cell}
-          direction={attemptDirections[currentAttempt]}
-          onResult={(isAvailable) => {
-            setProductions((prev) => [
-              ...prev,
-              attemptDirections[currentAttempt]
-            ]);
-            setCurrentAttempt(currentAttempt + 1);
-          }}
-        />
-      )}
+      {currentAttempt < attemptDirections.length &&
+        currentAttempt !== currentIncompleteProduction && (
+          <TileCheck
+            key={currentAttempt} // re-create on every new attempt
+            cell={cell}
+            direction={attemptDirections[currentAttempt]}
+            onResult={(isAvailable) => {
+              if (isAvailable) {
+                setCurrentIncompleteProduction(currentAttempt);
+                setProductions((prev) => [
+                  ...prev,
+                  attemptDirections[currentAttempt]
+                ]);
+              } else {
+                setCurrentAttempt(currentAttempt + 1);
+              }
+            }}
+          />
+        )}
     </>
   );
 };
