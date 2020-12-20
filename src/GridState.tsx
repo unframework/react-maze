@@ -31,35 +31,8 @@ export interface GridCellInfo<Cell> {
   value: Cell;
 
   getXY: () => [number, number];
+  getNeighbor: (dir: number) => Cell | undefined;
   getNeighborXY: (dir: number) => [number, number];
-}
-
-function createCellInfo<Cell>(
-  x: number,
-  y: number,
-  value: Cell
-): GridCellInfo<Cell> {
-  const instanceId = ++idCounter;
-
-  const xy: [number, number] = [x, y];
-
-  const neighborXY = CARDINAL_DIR_LIST.map(([dx, dy]): [number, number] => [
-    x + dx,
-    y + dy
-  ]);
-
-  return {
-    instanceId,
-
-    value,
-
-    getXY() {
-      return xy;
-    },
-    getNeighborXY(dir: number) {
-      return neighborXY[dir];
-    }
-  };
 }
 
 type GridState<Cell> = Array<GridCellInfo<Cell> | undefined>;
@@ -68,7 +41,7 @@ type CellHook<Cell> = (
   x: number,
   y: number,
   value: Cell,
-  onPlaced?: () => void,
+  onPlaced?: (placedCell: GridCellInfo<Cell>) => void,
   onOccupied?: (existingCell?: Cell) => void
 ) => GridCellInfo<Cell> | null;
 
@@ -80,6 +53,45 @@ export function createGridState<Cell>(
   emptyCell: Cell
 ): [React.FC, CellHook<Cell>] {
   const GridContext = React.createContext<GridState<Cell> | null>(null);
+
+  function createCellInfo(
+    x: number,
+    y: number,
+    value: Cell,
+    grid: GridState<Cell>
+  ): GridCellInfo<Cell> {
+    const instanceId = ++idCounter;
+
+    const xy: [number, number] = [x, y];
+
+    const neighborXY = CARDINAL_DIR_LIST.map(([dx, dy]): [number, number] => [
+      x + dx,
+      y + dy
+    ]);
+
+    return {
+      instanceId,
+
+      value,
+
+      getXY() {
+        return xy;
+      },
+      getNeighbor(dir: number) {
+        const [nx, ny] = neighborXY[dir];
+
+        if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
+          return emptyCell;
+        }
+
+        const nCellInfo = grid[nx + ny * gridWidth];
+        return nCellInfo && nCellInfo.value;
+      },
+      getNeighborXY(dir: number) {
+        return neighborXY[dir];
+      }
+    };
+  }
 
   const GridProvider: React.FC = ({ children }) => {
     const [grid] = useState(
@@ -93,7 +105,7 @@ export function createGridState<Cell>(
     x: number,
     y: number,
     value: Cell,
-    onPlaced?: () => void,
+    onPlaced?: (placedCell: GridCellInfo<Cell>) => void,
     onOccupied?: (existingCell: Cell) => void
   ): GridCellInfo<Cell> | null {
     const isOutOfBounds = x < 0 || x >= gridWidth || y < 0 || y >= gridHeight;
@@ -142,7 +154,7 @@ export function createGridState<Cell>(
       }
 
       // register on grid
-      const cellInfo = createCellInfo(x, y, value);
+      const cellInfo = createCellInfo(x, y, value, grid);
       grid[cellIndex] = cellInfo;
 
       // mark as registered (the caller will know on next render)
@@ -150,8 +162,7 @@ export function createGridState<Cell>(
 
       // notify
       if (onPlacedRef.current) {
-        console.log('placed');
-        onPlacedRef.current();
+        onPlacedRef.current(cellInfo);
       }
 
       // on unmount, clean up (checking if someone else took over the cell, just in case)

@@ -25,11 +25,9 @@ export default {
 const GRID_WIDTH = 4;
 const GRID_HEIGHT = 4;
 
-const [GridProvider, useGridCell] = createGridState<{}>(
-  GRID_WIDTH,
-  GRID_HEIGHT,
-  {}
-);
+const [GridProvider, useGridCell] = createGridState<{
+  onExit?: (dir: number) => void;
+}>(GRID_WIDTH, GRID_HEIGHT, {});
 
 const TileMeshPreview: React.FC<{
   x: number;
@@ -61,8 +59,7 @@ const TileMeshPreview: React.FC<{
 
 const ProposedTileProduction: React.FC<{
   cell: GridCellInfo<unknown>;
-  onPlaced: (exit: number) => void;
-}> = ({ cell, onPlaced }) => {
+}> = ({ cell }) => {
   const [attempts, setAttempts] = useState(() =>
     [...new Array(GRID_DIRECTION_COUNT)]
       .map((_, index) => index)
@@ -90,9 +87,6 @@ const ProposedTileProduction: React.FC<{
       entry={directionAcross(currentAttemptExit)}
       x={nx}
       y={ny}
-      onPlaced={() => {
-        onPlaced(currentAttemptExit);
-      }}
       onOccupied={() => {
         // try next config
         setAttempts((prev) => prev.slice(1));
@@ -123,12 +117,26 @@ const ProposedTile: React.FC<{
   entry: number;
   x: number;
   y: number;
-  onPlaced?: () => void;
   onOccupied?: () => void;
-}> = ({ isFirst, entry, x, y, onPlaced, onOccupied }) => {
+}> = ({ isFirst, entry, x, y, onOccupied }) => {
   const [exit, setExit] = useState<number | null>(null);
 
-  const cell = useGridCell(x, y, {}, onPlaced, onOccupied);
+  const cell = useGridCell(
+    x,
+    y,
+    {
+      onExit: setExit
+    },
+    (placedCell) => {
+      // notify cell from which we entered to complete the link
+      const fromCell = placedCell.getNeighbor(entry);
+
+      if (fromCell && fromCell.onExit) {
+        fromCell.onExit(directionAcross(entry));
+      }
+    },
+    onOccupied
+  );
 
   // nothing to do further if not claimed
   if (!cell) {
@@ -143,7 +151,7 @@ const ProposedTile: React.FC<{
         <TileMesh x={x} y={y} entry={entry} exit={exit} />
       )}
 
-      <ProposedTileProduction cell={cell} onPlaced={setExit} />
+      <ProposedTileProduction cell={cell} />
     </>
   );
 };
