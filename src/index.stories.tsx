@@ -151,7 +151,7 @@ const ProposedTile: React.FC<{
 export const Main: Story = () => (
   <Canvas
     style={{ height: '100vh' }}
-    camera={{ position: [0, -1, 5], up: [0, 0, 1] }}
+    camera={{ position: [0, -1, 8], up: [0, 0, 1] }}
     shadowMap
     onCreated={({ gl }) => {
       gl.toneMapping = THREE.ACESFilmicToneMapping;
@@ -163,6 +163,8 @@ export const Main: Story = () => (
     <MapControls />
 
     <scene>
+      <ambientLight color="#a0e0ff" />
+
       <mesh position={[0, 0, -1]} receiveShadow>
         <planeBufferGeometry args={[10, 10]} />
         <meshLambertMaterial color="#808080" />
